@@ -99,20 +99,27 @@ void setup() {
     USC0(UART0) = USC0(UART0) | BIT(UCRXI);
 
     setup_ota();
-
     mbServer.server(MODBUS_TCP_PORT);
     setup_registers();
 }
 
 void loop() {
-    ArduinoOTA.handle();
     long now = millis();
 
+    ArduinoOTA.handle();
     mbServer.task();
 
     if (now - LAST_UPDATE_SENT > UPDATE_INTERVAL) {
         read_p1();
     }
+}
+
+
+void setup_ota() {
+    ArduinoOTA.setPort(8266);
+    ArduinoOTA.setHostname(HOSTNAME);
+    ArduinoOTA.setPassword(OTA_PASSWORD);
+    ArduinoOTA.begin();
 }
 
 
@@ -147,6 +154,13 @@ void setup_registers() {
     mbServer.addHreg(addr_IMPORT_GAS_VOLUME, 0, 2);
 }
 
+void update_register(int address, long value) {
+    int16_t v_high = value >> 16;
+    int16_t v_low = (int16_t)value;
+    mbServer.Hreg(address, v_high);
+    mbServer.Hreg(address + 1, v_low);
+}
+
 
 void read_p1() {
     if (Serial.available()) {
@@ -157,20 +171,16 @@ void read_p1() {
             int len = Serial.readBytesUntil('\n', telegram, P1_MAX_LEN);
             ESP.wdtEnable(1);
 
-            process_p1(len);
+            telegram[len] = '\n';
+            telegram[len + 1] = 0;
+            yield();
+
+            bool result = decode_p1(len + 1);
+
+            if (result) {
+                LAST_UPDATE_SENT = millis();
+            }
         }
-    }
-}
-
-void process_p1(int len) {
-    telegram[len] = '\n';
-    telegram[len + 1] = 0;
-    yield();
-
-    bool result = decode_p1(len + 1);
-
-    if (result) {
-        LAST_UPDATE_SENT = millis();
     }
 }
 
@@ -222,7 +232,7 @@ bool decode_p1(int len) {
 
     if (strncmp(telegram, "1-0:1.7.0", strlen("1-0:1.7.0")) == 0) {
         IMPORT_POWER_ACTIVE = get_value(telegram, len, '(', '*');
-        update_register(addr_IMPORT_POWER_ACTIVE, IMPORT_POWER_ACTIVE); 
+        update_register(addr_IMPORT_POWER_ACTIVE, IMPORT_POWER_ACTIVE);
     }
 
     if (strncmp(telegram, "1-0:2.7.0", strlen("1-0:2.7.0")) == 0) {
@@ -329,14 +339,15 @@ bool decode_p1(int len) {
         L3_EXPORT_POWER_ACTIVE = get_value(telegram, len, '(', '*');
         update_register(addr_L3_EXPORT_POWER_ACTIVE, L3_EXPORT_POWER_ACTIVE);
     }
-    
+
     if (strncmp(telegram, "0-1:24.2.1", strlen("0-1:24.2.1")) == 0) {
         IMPORT_GAS_VOLUME = get_value(telegram, len, '(', '*');
         update_register(addr_IMPORT_GAS_VOLUME, IMPORT_GAS_VOLUME);
     }
-    
+
     return validCRCFound;
 }
+
 
 int find_char_in_array_rev(char array[], char c, int len) {
     for (int i = len - 1; i >= 0; i--) {
@@ -344,25 +355,8 @@ int find_char_in_array_rev(char array[], char c, int len) {
             return i;
         }
     }
-    
-    return -1;
-}
 
-unsigned int crc16(unsigned int crc, unsigned char *buf, int len) {
-    for (int pos = 0; pos < len; pos++) {
-        crc ^= (unsigned int)buf[pos];
-        
-        for (int i = 8; i != 0; i--) {
-            if ((crc & 0x0001) != 0) {
-                crc >>= 1;
-                crc ^= 0xA001;
-            } else {
-                crc >>= 1;
-            }
-        }
-    }
-    
-    return crc;
+    return -1;
 }
 
 bool is_number(char *res, int len) {
@@ -378,7 +372,7 @@ bool is_number(char *res, int len) {
 long get_value(char *buffer, int maxlen, char startchar, char endchar) {
     int s = find_char_in_array_rev(buffer, startchar, maxlen - 2);
     int l = find_char_in_array_rev(buffer, endchar, maxlen - 2) - s - 1;
-    
+
     char res[16];
     memset(res, 0, sizeof(res));
 
@@ -397,16 +391,19 @@ long get_value(char *buffer, int maxlen, char startchar, char endchar) {
     return 0;
 }
 
-void update_register(int address, long value) {
-    int16_t v_high = value >> 16;
-    int16_t v_low = (int16_t)value;
-    mbServer.Hreg(address, v_high);
-    mbServer.Hreg(address + 1, v_low);
-}
+unsigned int crc16(unsigned int crc, unsigned char *buf, int len) {
+    for (int pos = 0; pos < len; pos++) {
+        crc ^= (unsigned int)buf[pos];
 
-void setup_ota() {
-    ArduinoOTA.setPort(8266);
-    ArduinoOTA.setHostname(HOSTNAME);
-    ArduinoOTA.setPassword(OTA_PASSWORD);
-    ArduinoOTA.begin();
+        for (int i = 8; i != 0; i--) {
+            if ((crc & 0x0001) != 0) {
+                crc >>= 1;
+                crc ^= 0xA001;
+            } else {
+                crc >>= 1;
+            }
+        }
+    }
+
+    return crc;
 }
