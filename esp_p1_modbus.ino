@@ -6,9 +6,9 @@
 #define P1_BAUD_RATE 115200
 #define P1_MAX_LEN   1050
 
-#define HOSTNAME "espp1"
+#define OTA_HOSTNAME "espp1"
 #define OTA_PASSWORD "admin"
-#define MODBUS_TCP_PORT 1502
+#define MODBUS_TCP_PORT 502
 #define UPDATE_INTERVAL 1000
 
 #define STA_SSID ""
@@ -116,7 +116,7 @@ void loop() {
 
 void setup_ota() {
     ArduinoOTA.setPort(8266);
-    ArduinoOTA.setHostname(HOSTNAME);
+    ArduinoOTA.setHostname(OTA_HOSTNAME);
     ArduinoOTA.setPassword(OTA_PASSWORD);
     ArduinoOTA.begin();
 }
