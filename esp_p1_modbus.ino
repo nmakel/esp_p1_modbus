@@ -1,6 +1,5 @@
 #include <ArduinoOTA.h>
 #include <ESP8266WiFi.h>
-#include <SoftwareSerial.h>
 #include <ModbusIP_ESP8266.h>
 
 
