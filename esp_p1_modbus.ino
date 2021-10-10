@@ -43,6 +43,9 @@ long L1_EXPORT_POWER_ACTIVE;
 long L2_EXPORT_POWER_ACTIVE;
 long L3_EXPORT_POWER_ACTIVE;
 long IMPORT_GAS_VOLUME;
+long IMPORT_THERMAL_MEASUREMENT;
+long IMPORT_WATER_VOLUME;
+long IMPORT_SLAVE_MEASUREMENT;
 
 const int addr_IMPORT_ENERGY_ACTIVE_LOW = 0;
 const int addr_IMPORT_ENERGY_ACTIVE_HIGH = 2;
@@ -72,6 +75,9 @@ const int addr_L1_EXPORT_POWER_ACTIVE = 48;
 const int addr_L2_EXPORT_POWER_ACTIVE = 50;
 const int addr_L3_EXPORT_POWER_ACTIVE = 52;
 const int addr_IMPORT_GAS_VOLUME = 54;
+const int addr_IMPORT_THERMAL_MEASUREMENT = 56;
+const int addr_IMPORT_WATER_VOLUME = 58;
+const int addr_IMPORT_SLAVE_MEASUREMENT = 60;
 
 
 ModbusIP mbServer;
@@ -151,6 +157,9 @@ void setup_registers() {
     mbServer.addHreg(addr_L2_EXPORT_POWER_ACTIVE, 0, 2);
     mbServer.addHreg(addr_L3_EXPORT_POWER_ACTIVE, 0, 2);
     mbServer.addHreg(addr_IMPORT_GAS_VOLUME, 0, 2);
+    mbServer.addHreg(addr_IMPORT_THERMAL_MEASUREMENT, 0, 2);
+    mbServer.addHreg(addr_IMPORT_WATER_VOLUME, 0, 2);
+    mbServer.addHreg(addr_IMPORT_SLAVE_MEASUREMENT, 0, 2);
 }
 
 void update_register(int address, long value) {
@@ -342,6 +351,21 @@ bool decode_p1(int len) {
     if (strncmp(telegram, "0-1:24.2.1", strlen("0-1:24.2.1")) == 0) {
         IMPORT_GAS_VOLUME = get_value(telegram, len, '(', '*');
         update_register(addr_IMPORT_GAS_VOLUME, IMPORT_GAS_VOLUME);
+    }
+
+    if (strncmp(telegram, "0-2:24.2.1", strlen("0-2:24.2.1")) == 0) {
+        IMPORT_GAS_VOLUME = get_value(telegram, len, '(', '*');
+        update_register(addr_IMPORT_THERMAL_MEASUREMENT, IMPORT_THERMAL_MEASUREMENT);
+    }
+
+    if (strncmp(telegram, "0-3:24.2.1", strlen("0-3:24.2.1")) == 0) {
+        IMPORT_GAS_VOLUME = get_value(telegram, len, '(', '*');
+        update_register(addr_IMPORT_WATER_VOLUME, IMPORT_WATER_VOLUME);
+    }
+
+    if (strncmp(telegram, "0-4:24.2.1", strlen("0-4:24.2.1")) == 0) {
+        IMPORT_GAS_VOLUME = get_value(telegram, len, '(', '*');
+        update_register(addr_IMPORT_SLAVE_MEASUREMENT, IMPORT_SLAVE_MEASUREMENT);
     }
 
     return validCRCFound;
