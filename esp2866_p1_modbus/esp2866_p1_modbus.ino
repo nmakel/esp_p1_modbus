@@ -1,3 +1,7 @@
+// Compatible with ESP2866 modules
+// Board manager URL: https://arduino.esp8266.com/stable/package_esp8266com_index.json
+
+
 #include <ArduinoOTA.h>
 #include <ESP8266WiFi.h>
 #include <ModbusIP_ESP8266.h>
@@ -6,7 +10,7 @@
 #define P1_BAUD_RATE 115200
 #define P1_MAX_LEN   1050
 
-#define OTA_HOSTNAME "espp1"
+#define OTA_HOSTNAME "esp2866p1"
 #define OTA_PASSWORD "admin"
 #define MODBUS_TCP_PORT 502
 #define UPDATE_INTERVAL 1000
